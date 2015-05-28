@@ -1,125 +1,131 @@
 /* 
-  433 MHz RF REMOTE REPLAY sketch 
-     Written by ScottC 24 Jul 2014
+  ADAPTED FROM:
+  Transmit sketch - RF Calibration
+     Written by ScottC 17 July 2014
      Arduino IDE version 1.0.5
      Website: http://arduinobasics.blogspot.com
-     Receiver: XY-MK-5V      Transmitter: FS1000A/XY-FST
-     Description: Use Arduino to receive and transmit RF Remote signal          
+     Transmitter: FS1000A/XY-FST
+     Description: A simple sketch used to calibrate RF transmission.          
  ------------------------------------------------------------- */
- 
- #define rfReceivePin A0     //RF Receiver data pin = Analog pin 0
+
  #define rfTransmitPin 4  //RF Transmitter pin = digital pin 4
- #define button 6           //The button attached to digital pin 6
  #define ledPin 13        //Onboard LED = digital pin 13
  
- const int dataSize = 500;  //Arduino memory is limited (max=1700)
- byte storedData[dataSize];  //Create an array to store the data
- const unsigned int threshold = 100;  //signal threshold value
- int maxSignalLength = 255;   //Set the maximum length of the signal
- int dataCounter = 0;    //Variable to measure the length of the signal
- int buttonState = 1;    //Variable to control the flow of code using button presses
- int buttonVal = 0;      //Variable to hold the state of the button
- int timeDelay = 105;    //Used to slow down the signal transmission (can be from 75 - 135)
+ const int codeSize = 25;      //The size of the code to transmit
+ int codeToTransmit[codeSize]; //The array used to hold the RF code
+ int fanOFF[]={4,4,4,4,4,4,4,4,5,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,6}; //The RF code that will turn the light ON
+ int fanLO[]={2,2,2,2,1,4,4,4,4,5,1,4,4,4,4,4,4,5,2,2,2,2,2,2,3}; //The RF code that will turn the light OFF
+ int fanMED[]={};
+ int fanHI[]={};
+ int codeToggler = 0;  //Used to switch between turning the light ON and OFF
+ int timeDelay=5;      // The variable used to calibrate the RF signal lengths.
 
+ 
+ 
  void setup(){
-   Serial.begin(9600);    //Initialise Serial communication - only required if you plan to print to the Serial monitor
-   pinMode(rfTransmitPin, OUTPUT);    
-   pinMode(ledPin, OUTPUT); 
-   pinMode(button, INPUT);
- }
- 
- void loop(){
-   buttonVal = digitalRead(button);
+   Serial.begin(9600);        // Turn the Serial Protocol ON
+   pinMode(rfTransmitPin, OUTPUT);   //Transmit pin is an output  
+   pinMode(ledPin, OUTPUT);          
   
-   if(buttonState>0 && buttonVal==HIGH){
-     Serial.println("Listening for Signal");
-     initVariables();
-     listenForSignal();
-   }
-   
-   buttonVal = digitalRead(button);
-   
-   if(buttonState<1 && buttonVal==HIGH){
-     Serial.println("Send Signal");
-     sendSignal();
-   }
-   
-   delay(20);
+ //LED initialisation sequence - gives us some time to get ready
+  digitalWrite(ledPin, HIGH); 
+  delay(3000);
+  digitalWrite(ledPin, LOW); 
+  delay(1000);
  }
  
  
- /* ------------------------------------------------------------------------------
-     Initialise the array used to store the signal 
-    ------------------------------------------------------------------------------*/
- void initVariables(){
-   for(int i=0; i<dataSize; i++){
-     storedData[i]=0;
-   }
-   buttonState=0;
- }
  
- 
- /* ------------------------------------------------------------------------------
-     Listen for the signal from the RF remote. Blink the RED LED at the beginning to help visualise the process
-     And also turn RED LED on when receiving the RF signal 
-    ------------------------------------------------------------------------------ */
- void listenForSignal(){
-   digitalWrite(ledPin, HIGH);
-   delay(1000);
-   digitalWrite(ledPin,LOW);
-   while(analogRead(rfReceivePin)<threshold){
-     //Wait here until an RF signal is received
-   }
-   digitalWrite(ledPin, HIGH);
-   
-   //Read and store the rest of the signal into the storedData array
-   for(int i=0; i<dataSize; i=i+2){
-     
-      //Identify the length of the HIGH signal---------------HIGH
-      dataCounter=0; //reset the counter
-      while(analogRead(rfReceivePin)>threshold && dataCounter<maxSignalLength){
-        dataCounter++;
-      }  
-      storedData[i]=dataCounter;    //Store the length of the HIGH signal
+  void loop(){
+    toggleCode();    // switch between light ON and light OFF
+    transmitCode();  // transmit the code to RF receiver on the Fan/Light
     
+    timeDelay+=10;    //Increment the timeDelay by 10 microseconds with every transmission
+    delay(2000);      //Each transmission will be about 2 seconds apart.
+  }
+  
+  
+  
+  
+  /*---------------------------------------------------------------- 
+     toggleCode(): This is used to toggle the code for turning 
+                   the light ON and OFF 
+  -----------------------------------------------------------------*/
+  void toggleCode(){
+    if(codeToggler){
+       for(int i = 0; i<codeSize; i++){
+         codeToTransmit[i]=lightON[i];
+       } 
       
-      //Identify the length of the LOW signal---------------LOW
-      dataCounter=0;//reset the counter
-      while(analogRead(rfReceivePin)<threshold && dataCounter<maxSignalLength){
-        dataCounter++;
+    } else{
+      for(int i = 0; i<codeSize; i++){
+         codeToTransmit[i]=lightOFF[i];
+       } 
+    }
+    codeToggler=!codeToggler;
+  }
+   
+   
+   
+   
+  /*-----------------------------------------------------------------
+    transmitCode(): Used to transmit the signal to the RF receiver on
+                    the fan/light. There are 6 different HIGH-LOW signal combinations. 
+                    
+                    SH = short high   or  LH = long high   
+                                     PLUS
+         SL = short low    or    LL = long low    or    VLL = very long low
+                    
+  -------------------------------------------------------------------*/
+   void transmitCode(){
+    // The LED will be turned on to create a visual signal transmission indicator.
+    digitalWrite(ledPin, HIGH);
+   
+   //initialise the variables 
+    int highLength = 0;
+    int lowLength = 0;
+    
+    //The signal is transmitted 6 times in succession - this may vary with your remote.       
+    for(int j = 0; j<6; j++){
+      for(int i = 0; i<codeSize; i++){ 
+        switch(codeToTransmit[i]){
+          case 1: // SH + SL
+            highLength=3;
+            lowLength=3;
+          break;
+          case 2: // SH + LL
+            highLength=3;
+            lowLength=7;
+          break;
+          case 3: // SH + VLL
+            highLength=3;
+            lowLength=92;
+          break;
+          case 4: // LH + SL
+            highLength=7;
+            lowLength=3;
+          break;
+          case 5: // LH + LL
+            highLength=7;
+            lowLength=7;
+          break;
+          case 6: // LH + VLL
+            highLength=7;
+            lowLength=92;
+          break;
+        }
+           
+         /* Transmit a HIGH signal - the duration of transmission will be determined 
+            by the highLength and timeDelay variables */
+         digitalWrite(rfTransmitPin, HIGH);     
+         delayMicroseconds(highLength*timeDelay); 
+         
+         /* Transmit a LOW signal - the duration of transmission will be determined 
+            by the lowLength and timeDelay variables */
+         digitalWrite(rfTransmitPin,LOW);     
+         delayMicroseconds(lowLength*timeDelay);  
       }
-      storedData[i+1]=dataCounter;  //Store the length of the LOW signal
-   }
-   
-     storedData[0]++;  //Account for the first AnalogRead>threshold = lost while listening for signal
-     digitalWrite(ledPin, LOW);
- }
- 
- 
- /*------------------------------------------------------------------------------
-    Send the stored signal to the FAN/LIGHT's RF receiver. A time delay is required to synchronise
-    the digitalWrite timeframe with the 433MHz signal requirements. This has not been tested with different
-    frequencies.
-    ------------------------------------------------------------------------------ */
- void sendSignal(){
-   digitalWrite(ledPin, HIGH);
-   for(int i=0; i<dataSize; i=i+2){
-       //Send HIGH signal
-       digitalWrite(rfTransmitPin, HIGH);     
-       delayMicroseconds(storedData[i]*timeDelay);
-       //Send LOW signal
-       digitalWrite(rfTransmitPin, LOW);     
-       delayMicroseconds(storedData[i+1]*timeDelay);
-   }
-   digitalWrite(ledPin, LOW);
-   delay(1000);
-   
-   
-   /*-----View Signal in Serial Monitor */
-   for(int i=0; i<dataSize; i=i+2){
-       Serial.println("HIGH,LOW");
-       Serial.print(storedData[i]);
-       Serial.print(",");
-       Serial.println(storedData[i+1]);
-   }
+    }
+    //Turn the LED off after the code has been transmitted.
+    digitalWrite(ledPin, LOW); 
  }
