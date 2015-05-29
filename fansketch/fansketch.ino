@@ -13,10 +13,10 @@
  
  const int codeSize = 25;      //The size of the code to transmit
  int codeToTransmit[codeSize]; //The array used to hold the RF code
- int fanOFF[]={4,4,4,4,4,4,4,4,5,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,6}; //The RF code that will turn the light ON
- int fanLO[]={2,2,2,2,1,4,4,4,4,5,1,4,4,4,4,4,4,5,2,2,2,2,2,2,3}; //The RF code that will turn the light OFF
- int fanMED[]={};
- int fanHI[]={};
+ int fanOFF[]={4,4,4,4,4,4,4,4,5,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,6}; //The RF code that will turn the fan OFF
+ int fanLOW[]={4,4,4,4,4,4,4,4,5,2,2,2,2,2,2,2,2,2,2,2,2,2,1,5,3}; //The RF code that will turn the fan on LOW
+ int fanMED[]={4,4,4,4,4,4,4,4,5,2,2,2,2,2,2,2,2,2,2,2,1,5,4,4,3}; //The RF code that will turn the fan on MED (3)
+ int fanHI[]={4,4,4,4,4,4,4,4,5,2,2,2,2,2,2,2,2,1,5,2,2,2,2,2,3};
  int codeToggler = 0;  //Used to switch between turning the light ON and OFF
  int timeDelay=5;      // The variable used to calibrate the RF signal lengths.
 
