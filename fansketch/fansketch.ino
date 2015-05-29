@@ -37,7 +37,7 @@
  
  
   void loop(){
-    toggleCode();    // switch between light ON and light OFF
+    toggleCode();    // switch between fan of and lo
     transmitCode();  // transmit the code to RF receiver on the Fan/Light
     
     timeDelay+=10;    //Increment the timeDelay by 10 microseconds with every transmission
@@ -54,12 +54,12 @@
   void toggleCode(){
     if(codeToggler){
        for(int i = 0; i<codeSize; i++){
-         codeToTransmit[i]=lightON[i];
+         codeToTransmit[i]=fanLO[i];
        } 
       
     } else{
       for(int i = 0; i<codeSize; i++){
-         codeToTransmit[i]=lightOFF[i];
+         codeToTransmit[i]=fanOFF[i];
        } 
     }
     codeToggler=!codeToggler;
@@ -85,33 +85,33 @@
     int highLength = 0;
     int lowLength = 0;
     
-    //The signal is transmitted 6 times in succession - this may vary with your remote.       
-    for(int j = 0; j<6; j++){
+    //The signal is transmitted 8 times in succession - this may vary with your remote.       
+    for(int j = 0; j<8; j++){
       for(int i = 0; i<codeSize; i++){ 
         switch(codeToTransmit[i]){
           case 1: // SH + SL
             highLength=3;
-            lowLength=3;
+            lowLength=5;
           break;
           case 2: // SH + LL
             highLength=3;
-            lowLength=7;
+            lowLength=10;
           break;
           case 3: // SH + VLL
             highLength=3;
-            lowLength=92;
+            lowLength=52;
           break;
           case 4: // LH + SL
-            highLength=7;
-            lowLength=3;
+            highLength=8;
+            lowLength=5;
           break;
           case 5: // LH + LL
-            highLength=7;
-            lowLength=7;
+            highLength=8;
+            lowLength=10;
           break;
           case 6: // LH + VLL
-            highLength=7;
-            lowLength=92;
+            highLength=8;
+            lowLength=52;
           break;
         }
            
