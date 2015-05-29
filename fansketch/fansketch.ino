@@ -10,6 +10,7 @@
 
  #define rfTransmitPin 4  //RF Transmitter pin = digital pin 4
  #define ledPin 13        //Onboard LED = digital pin 13
+ #define buttonPin 6      //The button being used to turn stuff on
  
  const int codeSize = 25;      //The size of the code to transmit
  int codeToTransmit[codeSize]; //The array used to hold the RF code
@@ -18,14 +19,15 @@
  int fanMED[]={4,4,4,4,4,4,4,4,5,2,2,2,2,2,2,2,2,2,2,2,1,5,4,4,3}; //The RF code that will turn the fan on MED (3)
  int fanHI[]={4,4,4,4,4,4,4,4,5,2,2,2,2,2,2,2,2,1,5,2,2,2,2,2,3};
  int codeToggler = 0;  //Used to switch between turning the light ON and OFF
- int timeDelay=5;      // The variable used to calibrate the RF signal lengths.
+ int timeDelay=100;      // The variable used to calibrate the RF signal lengths.
 
  
  
  void setup(){
    Serial.begin(9600);        // Turn the Serial Protocol ON
    pinMode(rfTransmitPin, OUTPUT);   //Transmit pin is an output  
-   pinMode(ledPin, OUTPUT);          
+   pinMode(ledPin, OUTPUT); 
+   pinMode(buttonPin, INPUT);   
   
  //LED initialisation sequence - gives us some time to get ready
   digitalWrite(ledPin, HIGH); 
@@ -37,11 +39,12 @@
  
  
   void loop(){
-    toggleCode();    // switch between fan of and lo
-    transmitCode();  // transmit the code to RF receiver on the Fan/Light
-    
-    timeDelay+=10;    //Increment the timeDelay by 10 microseconds with every transmission
-    delay(2000);      //Each transmission will be about 2 seconds apart.
+    if(digitalRead(buttonPin)==HIGH){
+        toggleCode();    // switch between fan of and lo
+        transmitCode();  // transmit the code to RF receiver on the Fan/Light
+    }
+    //timeDelay+=10;    //Increment the timeDelay by 10 microseconds with every transmission
+    //delay(5000);      //Each transmission will be about 5 seconds apart.
   }
   
   
@@ -54,7 +57,7 @@
   void toggleCode(){
     if(codeToggler){
        for(int i = 0; i<codeSize; i++){
-         codeToTransmit[i]=fanLO[i];
+         codeToTransmit[i]=fanHI[i];
        } 
       
     } else{
