@@ -10,7 +10,10 @@
 
  #define rfTransmitPin 4  //RF Transmitter pin = digital pin 4
  #define ledPin 13        //Onboard LED = digital pin 13
- #define buttonPin 6      //The button being used to turn stuff on
+ #define offPin 6      //The button being used to turn stuff off
+ #define loPin 7
+ #define medPin 8
+ #define hiPin 9
  
  const int codeSize = 25;      //The size of the code to transmit
  int codeToTransmit[codeSize]; //The array used to hold the RF code
@@ -27,7 +30,10 @@
    Serial.begin(9600);        // Turn the Serial Protocol ON
    pinMode(rfTransmitPin, OUTPUT);   //Transmit pin is an output  
    pinMode(ledPin, OUTPUT); 
-   pinMode(buttonPin, INPUT);   
+   pinMode(offPin, INPUT);
+   pinMode(loPin, INPUT);
+   pinMode(medPin, INPUT);
+   pinMode(hiPin, INPUT);
   
  //LED initialisation sequence - gives us some time to get ready
   digitalWrite(ledPin, HIGH); 
@@ -39,8 +45,21 @@
  
  
   void loop(){
-    if(digitalRead(buttonPin)==HIGH){
-        toggleCode();    // switch between fan of and lo
+    //Select the appropriate code to queue for send based on the active digital pin
+    if(digitalRead(offPin)==HIGH){
+        toggleCode(0);    // switch between fan of and lo
+        transmitCode();  // transmit the code to RF receiver on the Fan/Light
+    }
+    if(digitalRead(loPin)==HIGH){
+        toggleCode(1);    // switch between fan of and lo
+        transmitCode();  // transmit the code to RF receiver on the Fan/Light
+    }
+    if(digitalRead(medPin)==HIGH){
+        toggleCode(2);    // switch between fan of and lo
+        transmitCode();  // transmit the code to RF receiver on the Fan/Light
+    }
+    if(digitalRead(hiPin)==HIGH){
+        toggleCode(3);    // switch between fan of and lo
         transmitCode();  // transmit the code to RF receiver on the Fan/Light
     }
     //timeDelay+=10;    //Increment the timeDelay by 10 microseconds with every transmission
@@ -51,21 +70,27 @@
   
   
   /*---------------------------------------------------------------- 
-     toggleCode(): This is used to toggle the code for turning 
-                   the light ON and OFF 
+     toggleCode(): Used to queue the appropriate code for send into codeToTransmit() array
   -----------------------------------------------------------------*/
-  void toggleCode(){
-    if(codeToggler){
-       for(int i = 0; i<codeSize; i++){
-         codeToTransmit[i]=fanHI[i];
-       } 
-      
-    } else{
-      for(int i = 0; i<codeSize; i++){
-         codeToTransmit[i]=fanOFF[i];
-       } 
+  void toggleCode(int x){
+    switch(x){
+      case 0:
+        for(int i = 0; i<codeSize; i++){
+           codeToTransmit[i]=fanOFF[i];
+        }
+      case 1:
+        for(int i = 0; i<codeSize; i++){
+           codeToTransmit[i]=fanLOW[i];
+        }
+      case 2:
+        for(int i = 0; i<codeSize; i++){
+           codeToTransmit[i]=fanMED[i];
+        }
+      case 3:
+        for(int i = 0; i<codeSize; i++){
+           codeToTransmit[i]=fanHI[i];
+        }
     }
-    codeToggler=!codeToggler;
   }
    
    
